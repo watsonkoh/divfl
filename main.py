@@ -3,7 +3,9 @@ import argparse
 import importlib
 import random
 import os
-import tensorflow as tf
+#import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 from flearn.utils.model_utils import read_data
 
 # GLOBAL PARAMETERS
@@ -13,15 +15,17 @@ DATASETS = ['celeba', 'sent140', 'nist', 'shakespeare', 'mnist',
 
 
 MODEL_PARAMS = {
+    'synthetic.mclr': (10, ), # num_classes
+    'mnist.mclr': (10,), # num_classes
+    'mnist.cnn': (10,),  # num_classes
+    'nist.mclr': (26,),  # num_classes
+    'nist.cnn':(10,),
+    'shakespeare.mclr': (10,), # num_classes
+    'shakespeare.stacked_lstm': (80, 80, 256), # seq_len, emb_dim, num_hidden
+    'sent140.mclr': (10,), # num_classes
     'sent140.bag_dnn': (2,), # num_classes
     'sent140.stacked_lstm': (25, 2, 100), # seq_len, num_classes, num_hidden 
     'sent140.stacked_lstm_no_embeddings': (25, 2, 100), # seq_len, num_classes, num_hidden
-    'nist.mclr': (26,),  # num_classes
-    'nist.cnn':(10,),
-    'mnist.mclr': (10,), # num_classes
-    'mnist.cnn': (10,),  # num_classes
-    'shakespeare.stacked_lstm': (80, 80, 256), # seq_len, emb_dim, num_hidden
-    'synthetic.mclr': (10, ), # num_classes
     'celeba.cnn': (2,)
 }
 
@@ -100,6 +104,10 @@ def read_options():
                         help='frequency of sending gradient metric for submodular',
                         type=int,
                         default=1)
+    parser.add_argument('--num_attackers',
+                        help='number of attacker',
+                        type=int,
+                        default=0)
 
     try: parsed = vars(parser.parse_args())
     except IOError as msg: parser.error(str(msg))
