@@ -4,9 +4,10 @@ import json
 
 import os
 import sys
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
-from tensorflow.contrib import rnn
+#from tensorflow.contrib.rnn import rnn
 
 utils_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 utils_dir = os.path.join(utils_dir, 'utils')
@@ -54,8 +55,9 @@ class Model(object):
         x = tf.nn.embedding_lookup(embedding, features)
         labels = tf.placeholder(tf.int32, [None, self.num_classes])
         
-        stacked_lstm = rnn.MultiRNNCell(
-            [rnn.BasicLSTMCell(self.n_hidden) for _ in range(2)])
+#        stacked_lstm = rnn.MultiRNNCell(
+        stacked_lstm = tf.nn.rnn_cell.MultiRNNCell(
+            [tf.nn.rnn_cell.BasicLSTMCell(self.n_hidden) for _ in range(2)])
         outputs, _ = tf.nn.dynamic_rnn(stacked_lstm, x, dtype=tf.float32)
         pred = tf.layers.dense(inputs=outputs[:,-1,:], units=self.num_classes)
         

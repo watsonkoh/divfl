@@ -3,8 +3,8 @@ from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import state_ops
 from tensorflow.python.framework import ops
 from tensorflow.python.training import optimizer
-import tensorflow as tf
-
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 class PerGodGradientDescent(optimizer.Optimizer):
     """Implementation of Perturbed gold Gradient Descent"""
@@ -35,6 +35,7 @@ class PerGodGradientDescent(optimizer.Optimizer):
         gold = self.get_slot(var, "gold")
 
         var_update = state_ops.assign_sub(var, lr_t*(grad + gold + mu_t*(var-vstar))) #Update 'ref' by subtracting 'value
+
         #Create an op that groups multiple operations.
         #When this op finishes, all ops in input have finished
         return control_flow_ops.group(*[var_update,])

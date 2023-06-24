@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+from tqdm import trange, tqdm
 
 class Client(object):
     
@@ -33,7 +34,7 @@ class Client(object):
         bytes_r = self.model.size
         return ((self.num_samples, grads), (bytes_w, comp, bytes_r))
 
-    def solve_inner(self, num_epochs=1, batch_size=10):
+    def solve_inner(self, num_epochs=1, batch_size=10, attacked=0):
         '''Solves local optimization problem
         
         Return:
@@ -45,11 +46,19 @@ class Client(object):
         '''
 
         bytes_w = self.model.size
-        soln, comp, grads = self.model.solve_inner(self.train_data, num_epochs, batch_size)
+        if attacked == 0 :
+            traindata = dict(self.train_data)
+        else :
+            traindata = dict(self.train_data)
+            tqdm.write('TrainDataY0 ：{}'.format(list(np.array(traindata['y']))))
+            #traindata['y'] = list(list(traindata['y'][10:])+list(traindata['y'][:10])) # label flipping attack
+            traindata['y'][:] = [ (x + 5)%10 for x in traindata['y']]
+            tqdm.write('TrainDataY1 ：{}'.format(list(np.array(traindata['y']))))
+        soln, comp, grads = self.model.solve_inner(traindata, num_epochs, batch_size)
         bytes_r = self.model.size
         return (self.num_samples, soln), (bytes_w, comp, bytes_r), grads
 
-    def solve_iters(self, num_iters=1, batch_size=10):
+    def solve_iters(self, num_iters=1, batch_size=10, attacked=0):
         '''Solves local optimization problem
 
         Return:
@@ -61,7 +70,16 @@ class Client(object):
         '''
 
         bytes_w = self.model.size
-        soln, comp = self.model.solve_iters(self.train_data, num_iters, batch_size)
+        if attacked == 0 :
+            traindata = dict(self.train_data)
+        else :
+            traindata = dict(self.train_data)
+            tqdm.write('TrainDataY0 ：{}'.format(list(np.array(traindata['y']))))
+            #traindata['y'] = list(list(traindata['y'][10:])+list(traindata['y'][:10])) # label flipping attack
+            traindata['y'][:] = [ (x + 5)%10 for x in traindata['y']]
+            tqdm.write('TrainDataY1 ：{}'.format(list(np.array(traindata['y']))))
+            
+        soln, comp = self.model.solve_iters(traindata, num_iters, batch_size)
         bytes_r = self.model.size
         return (self.num_samples, soln), (bytes_w, comp, bytes_r)
 

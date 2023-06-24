@@ -1,5 +1,6 @@
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 from tqdm import tqdm
 
 from flearn.models.client import Client
@@ -7,6 +8,8 @@ from flearn.utils.model_utils import Metrics
 from flearn.utils.tf_utils import process_grad
 
 from sklearn.metrics import pairwise_distances
+
+from collections import deque 
 
 class BaseFedarated(object):
     def __init__(self, params, learner, dataset):
@@ -38,6 +41,8 @@ class BaseFedarated(object):
         users, groups, train_data, test_data = dataset
         if len(groups) == 0:
             groups = [None for _ in users]
+            
+        
         all_clients = [Client(u, g, train_data[u], test_data[u], model) for u, g in zip(users, groups)]
         return all_clients
 
@@ -79,7 +84,8 @@ class BaseFedarated(object):
             # serial_cl_grads = process_grad(client_grads)
             if cc == 0:
                 intermediate_grads = np.zeros([len(self.clients) + 1, len(client_grads)])
-            # print(client_grads)
+
+            #print(client_grads)
             
             # serial_cl_grads = client_grads
             global_grads = np.add(global_grads, client_grads * num_samples)
@@ -189,26 +195,6 @@ class BaseFedarated(object):
             V_set.remove(R_set[i])
         return SUi
 
-    def greedy(self, num_clients):
-        # initialize the ground set and the selected set
-        V_set = set(range(len(self.clients)))
-        SUi = set()
-        for ni in range(num_clients):
-            R_set = list(V_set)
-            if ni == 0:
-                marg_util = self.norm_diff[:, R_set].sum(0)
-                i = marg_util.argmin()
-                client_min = self.norm_diff[:, R_set[i]]
-            else:
-                client_min_R = np.minimum(client_min[:,None], self.norm_diff[:,R_set])
-                marg_util = client_min_R.sum(0)
-                i = marg_util.argmin()
-                client_min = client_min_R[:, i]
-            # print(R_set[i], marg_util[i])
-            SUi.add(R_set[i])
-            V_set.remove(R_set[i])
-        return SUi
-
     def lazy_greedy(self, num_clients):
         # initialize the ground set and the selected set
         V_set = set(range(len(self.clients)))
@@ -220,7 +206,7 @@ class BaseFedarated(object):
         L_s0 = 2. * marg_util.max()
         marg_util = L_s0 - marg_util
         client_min = self.norm_diff[:,i]
-        # print(i)
+        #print("Watson (i) =", i)
         SUi.add(i)
         V_set.remove(i)
         S_util = marg_util[i]
@@ -234,7 +220,18 @@ class BaseFedarated(object):
                 client_min_i = np.minimum(client_min, self.norm_diff[:,i])
                 SUi_util = L_s0 - client_min_i.sum()
 
+                """
+                print("0 - ", len(argsort_V))
+                print("1 - ", marg_util[i])
+                print("2 - ", ni)
+                print("3 - ", len(SUi))
+                """
+
                 marg_util[i] = SUi_util - S_util
+
+                if ni == 0 and len(SUi) == num_clients :
+                    break
+
                 if ni > 0:
                     if marg_util[i] < marg_util[pre_i]:
                         if ni == len(argsort_V) - 1 or marg_util[pre_i] >= marg_util[argsort_V[-ni-2]]:
@@ -261,17 +258,37 @@ class BaseFedarated(object):
                             SUi.remove(i)
                             client_min_pre_i = client_min_i.copy()
                 else:
-                    if marg_util[i] >= marg_util[argsort_V[-ni-2]]:
-                        S_util = SUi_util
-                        # print(i, L_s0 - S_util)
-                        V_set.remove(i)
-                        marg_util[i] = -1.
-                        client_min = client_min_i.copy()
-                        break
-                    else:
-                        pre_i = i
-                        SUi.remove(i)
-                        client_min_pre_i = client_min_i.copy()
+                        if marg_util[i] >= marg_util[argsort_V[-ni-2]]:
+                            S_util = SUi_util
+                            # print(i, L_s0 - S_util)
+                            V_set.remove(i)
+                            marg_util[i] = -1.
+                            client_min = client_min_i.copy()
+                            break
+                        else:
+                            pre_i = i
+                            SUi.remove(i)
+                            client_min_pre_i = client_min_i.copy()
+        return SUi
+
+    def greedy(self, num_clients):
+        # initialize the ground set and the selected set
+        V_set = set(range(len(self.clients)))
+        SUi = set()
+        for ni in range(num_clients):
+            R_set = list(V_set)
+            if ni == 0:
+                marg_util = self.norm_diff[:, R_set].sum(0)
+                i = marg_util.argmin()
+                client_min = self.norm_diff[:, R_set[i]]
+            else:
+                client_min_R = np.minimum(client_min[:,None], self.norm_diff[:,R_set])
+                marg_util = client_min_R.sum(0)
+                i = marg_util.argmin()
+                client_min = client_min_R[:, i]
+            # print(R_set[i], marg_util[i])
+            SUi.add(R_set[i])
+            V_set.remove(R_set[i])
         return SUi
 
     def select_clients(self, round, num_clients=20):
@@ -279,6 +296,23 @@ class BaseFedarated(object):
         
         Args:
             num_clients: number of clients to select; default 20
+                note that within function, num_clients is set to
+                min(num_clients, len(possible_clients))
+        
+        Return:
+            list of selected clients objects
+        '''
+
+        num_clients = min(num_clients, len(self.clients))
+        np.random.seed(round)  # make sure for each comparison, we are selecting the same clients each round
+        indices = np.random.choice(range(len(self.clients)), num_clients, replace=False)
+        return indices, np.asarray(self.clients)[indices]
+
+    def select_attackers(self, round, num_clients=0):
+        '''selects num_clients clients weighted by number of samples from possible_clients
+        
+        Args:
+            num_clients: number of attackers to select; default 0
                 note that within function, num_clients is set to
                 min(num_clients, len(possible_clients))
         

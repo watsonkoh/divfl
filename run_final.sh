@@ -11,6 +11,7 @@ testvar=( "divfl_lazy" "divfl_stochastic" "powerchoice" "fedavg" ) #clientsel=
 testgroup="clientsel"   $4
 
 rm -rf log/*
+mkdir log
 mkdir report/$testgroup
 mkdir logs/$testgroup
 

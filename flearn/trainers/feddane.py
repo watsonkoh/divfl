@@ -1,6 +1,7 @@
 import numpy as np
 from tqdm import trange, tqdm
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 from .fedbase import BaseFedarated
 from flearn.optimizer.pggd import PerGodGradientDescent
@@ -16,6 +17,7 @@ class Server(BaseFedarated):
     def train(self):
         '''Train using Federated Proximal'''
         print('Training with {} workers ---'.format(self.clients_per_round))
+        
         for i in trange(self.num_rounds, desc='Round: ', ncols=120):
             # test model
             if i % self.eval_every == 0:
@@ -28,8 +30,8 @@ class Server(BaseFedarated):
 
             # choose K clients prop to data size
             selected_clients = self.select_clients(i, num_clients=self.clients_per_round)
-
             cgrads = [] # buffer for receiving client solutions
+
             for c in tqdm(selected_clients, desc='Grads: ', leave=False, ncols=120):
                 # communicate the latest model
                 c.set_params(self.latest_model)
@@ -45,8 +47,8 @@ class Server(BaseFedarated):
 
             # Choose K clients prop to data size
             selected_clients = self.select_clients(i, num_clients=self.clients_per_round)
-
             csolns = [] # buffer for receiving client solutions
+            
             for c in tqdm(selected_clients, desc='Solve: ', leave=False, ncols=120):
                 # communicate the latest model
                 c.set_params(self.latest_model)  # w_{t-1}

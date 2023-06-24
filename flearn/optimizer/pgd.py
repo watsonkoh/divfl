@@ -3,8 +3,8 @@ from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import state_ops
 from tensorflow.python.framework import ops
 from tensorflow.python.training import optimizer
-import tensorflow as tf
-
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 class PerturbedGradientDescent(optimizer.Optimizer):
     """Implementation of Perturbed Gradient Descent, i.e., FedProx optimizer"""
@@ -26,18 +26,21 @@ class PerturbedGradientDescent(optimizer.Optimizer):
         for v in var_list:
             self._zeros_slot(v, "vstar", self._name)
 
+
     def _apply_dense(self, grad, var):
         lr_t = math_ops.cast(self._lr_t, var.dtype.base_dtype)
         mu_t = math_ops.cast(self._mu_t, var.dtype.base_dtype)
+
         vstar = self.get_slot(var, "vstar")
+
 
         var_update = state_ops.assign_sub(var, lr_t*(grad + mu_t*(var-vstar)))
 
+        #Create an op that groups multiple operations.
+        #When this op finishes, all ops in input have finished
         return control_flow_ops.group(*[var_update,])
-
     
     def _apply_sparse_shared(self, grad, var, indices, scatter_add):
-
         lr_t = math_ops.cast(self._lr_t, var.dtype.base_dtype)
         mu_t = math_ops.cast(self._mu_t, var.dtype.base_dtype)
         vstar = self.get_slot(var, "vstar")
