@@ -3,7 +3,7 @@
 
 ## MSSD 2023 Thesis on Label-Flipping Attack with Diverse Client Selection :
 
-<b>Title</b>: <i>DLabel-Flipping Attack with Diverse Client Selection for Federated Learning</i> <a href="https://openreview.net/pdf?id=nwKXyFvaUm">[pdf]</a> <a href="https://iclr.cc/virtual/2022/poster/7047">[presentation]</a>\
+<b>Title</b>: <i>Label-Flipping Attack with Diverse Client Selection for Federated Learning</i>\
 <b>Authors</b>: Watson Koh, Dr. Brian (NTU)\
 <b>Institutes</b>: ISTD, Singapore University of Technology and Design (SUTD)
 
@@ -30,12 +30,6 @@ The statistics of real federated datasets are summarized as follows.
 | Sent140| 772      |    40,783 | 53 (32)|
 
 </center>
-
-### Downloading dependencies
-
-```
-pip3 install -r requirements.txt  
-```
 
 ## References
 See our () paper for more details as well as all references.
