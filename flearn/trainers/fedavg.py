@@ -36,7 +36,7 @@ def apply_standard_scaler(gradients):
     return scaler.fit_transform(gradients)
     
 def calculate_pca_of_gradients(gradients, num_components):
-    pca = PCA(n_components=num_components, whiten=True)
+    pca = PCA(n_components=num_components)
 
     print("Computing {}-component PCA of gradients".format(num_components))
 
@@ -234,17 +234,31 @@ class Server(BaseFedarated):
                     a = np.array(soln[1][1])
                     f.write('At round {} SoluMag11 of Client {} ：{} ：{} ：{}\n'.format(i, c.id, doattacked, magnitude(np.hstack(a)), len(a) ))
                     f.write('At round {} SoluSets11 of Client {} ：{} ：{} ：{}\n'.format(i, c.id, doattacked, list(np.around(np.hstack(a),2)), len(a) ))
-                
+                    a = soln[1][0].flatten()
+                    f.write('At round {} SoluMag10F of Client {} ：{} ：{} ：{}\n'.format(i, c.id, doattacked, magnitude(np.hstack(a)), len(a) ))
+                    f.write('At round {} SoluSets10F of Client {} ：{} ：{} ：{}\n'.format(i, c.id, doattacked, list(np.around(np.hstack(a),2)), len(a) ))                
+                    f.write('At round {} SoluSets10F of Client {} ：{} ：{} ：{}\n'.format(i, c.id, doattacked, list(np.around(np.hstack(a),2)), len(a) ))
+                    print(type(soln[0]))
+                    print(type(soln[1]))
+                    flat_list = np.concatenate(soln[1][0])
+                    f.write('At round {} SoluSets1F of Client {} ：{} ：{} ：{}\n'.format(i, c.id, doattacked, list(np.around(flat_list,2)), len(flat_list) ))
+                    print(type(soln[1][0]))
+                    print(type(soln[1][1]))
+
                 # gather solutions from client
                 csolns.append(soln)
                 
                 if( i < 100 ) :
-                    #param_diff.append(grads)
                     if( doattacked > 0 ):
-                        param_diff.append(soln[1][0].flatten())
+                        #param_diff.append(grads)
+                        #param_diff.append(soln[1][0].flatten())
+                        param_diff.append(soln[1][1].flatten())
                         worker_ids.append(indices[idx])
                     else :
-                        param_diff.append(np.zeros(len(soln[1][0].flatten())))
+                        #param_diff.append(grads)
+                        #param_diff.append(soln[1][0].flatten())
+                        param_diff.append(soln[1][1].flatten())
+                        #param_diff.append(np.zeros(len(soln[1][0].flatten())))
                         worker_ids.append(indices[idx])
 
                 if 'divfl' in self.clientsel_algo :
@@ -304,7 +318,7 @@ class Server(BaseFedarated):
         #print("Prescaled gradients: {}".format(str(param_diff)))
         scaled_param_diff = apply_standard_scaler(param_diff)
         print("Postscaled gradients: {}".format(str(scaled_param_diff)))
-        dim_reduced_gradients = calculate_pca_of_gradients(scaled_param_diff, 2)
+        dim_reduced_gradients = calculate_pca_of_gradients(scaled_param_diff, min(len(param_diff), param_diff[0].shape[0]))
         print("PCA reduced gradients: {}".format(str(dim_reduced_gradients)))
         print("Dimensionally-reduced gradients shape: ({}, {})".format(len(dim_reduced_gradients), dim_reduced_gradients[0].shape[0]))
         plot_gradients_2d(zip(worker_ids, dim_reduced_gradients), attacker_indices)

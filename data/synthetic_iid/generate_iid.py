@@ -15,8 +15,8 @@ def generate_synthetic(alpha, beta, iid):
     dimension = 60
     NUM_CLASS = 10
 
-    samples_per_user = np.random.lognormal(4, 2, (NUM_USER)).astype(int) + 50
-    #samples_per_user = 50*np.ones((NUM_USER,))
+    #samples_per_user = np.random.lognormal(4, 2, (NUM_USER)).astype(int) + 50
+    samples_per_user = 50*np.ones((NUM_USER,))
     samples_per_user = np.array(samples_per_user, int)
     print(samples_per_user)
     num_samples = np.sum(samples_per_user)
@@ -56,8 +56,8 @@ def generate_synthetic(alpha, beta, iid):
 
 
 def main():
-    train_path = "data/synthetic_iid/data/train/mytrain_equal.json"
-    test_path = "data/synthetic_iid/data/test/mytest_equal.json"
+    train_path = "data/train/mytrain.json"
+    test_path = "data/test/mytest.json"
 
     X, y = generate_synthetic(alpha=0, beta=0, iid=1)
 
@@ -82,10 +82,10 @@ def main():
         test_data['user_data'][uname] = {'x': X[i][train_len:], 'y': y[i][train_len:]}
         test_data['num_samples'].append(test_len)
 
-    with open(train_path, 'w') as outfile:
-        json.dump(train_data, outfile)
-    with open(test_path, 'w') as outfile:
-        json.dump(test_data, outfile)
+    with open(train_path, 'w') as outtrainfile:
+        json.dump(train_data, outtrainfile)
+    with open(test_path, 'w') as outtestfile:
+        json.dump(test_data, outtestfile)
 
 
 if __name__ == "__main__":

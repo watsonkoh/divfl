@@ -9,7 +9,7 @@ python3  -u main.py --dataset=$1 --optimizer='fedavg'  \
             --eval_every=1 \
             --batch_size=10 \
             --num_epochs=1 \
-            --num_attackers=2 \
+            --num_attackers=20 \
             --clientsel_algo=$4 \
 
 

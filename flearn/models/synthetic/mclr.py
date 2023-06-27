@@ -5,6 +5,7 @@ tf.disable_v2_behavior()
 from flearn.utils.model_utils import batch_data, batch_data_multiple_iters
 from flearn.utils.tf_utils import graph_size
 from flearn.utils.tf_utils import process_grad
+from tqdm import trange, tqdm
 
 
 class Model(object):
@@ -76,6 +77,8 @@ class Model(object):
     
     def solve_inner(self, data, num_epochs=1, batch_size=32):
         '''Solves local optimization problem'''
+
+        tqdm.write('TrainDataY2 ：{}'.format(list(np.array(data['y']))))
 
         with self.graph.as_default():
             _, grads = self.get_gradients(data, 610) # Ignore the hardcoding, it's not used anywhere
